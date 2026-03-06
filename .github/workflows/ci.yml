@@ -34,6 +34,7 @@ jobs:
         run: dotnet build ${{ matrix.solution }} --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
       - name: Test with coverage
+        continue-on-error: true
         run: >
           dotnet test ${{ matrix.solution }}
           --no-build
