@@ -1,0 +1,43 @@
+name: Mutation Testing (Stryker.NET)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 02:00 UTC nightly
+  workflow_dispatch:
+
+jobs:
+  stryker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - solution: generated/ArithmeticOperations
+            test-project: generated/ArithmeticOperations/ArithmeticOperations.Tests/ArithmeticOperations.Tests.csproj
+            source-project: generated/ArithmeticOperations/ArithmeticOperations/ArithmeticOperations.csproj
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Stryker.NET
+        run: dotnet tool install --global dotnet-stryker
+
+      - name: Run Stryker
+        working-directory: ${{ matrix.solution }}
+        run: >
+          dotnet stryker
+          --test-project "${{ github.workspace }}/${{ matrix.test-project }}"
+          --project "${{ github.workspace }}/${{ matrix.source-project }}"
+          --reporter "markdown"
+          --reporter "html"
+          --break-at 60
+
+      - name: Upload Stryker report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stryker-report-${{ strategy.job-index }}
+          path: ${{ matrix.solution }}/StrykerOutput/**/reports/
